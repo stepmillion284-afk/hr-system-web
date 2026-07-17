@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลงเวลาเข้า-ออกงาน</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans Thai', 'Sarabun', -apple-system, 'Segoe UI', Tahoma, sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+    background: #F4F7F6;
+    color: #172321;
+  }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  h2 { font-size: 16px; margin: 24px 0 10px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4C5C58; }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #B9C7C3;
+    border-radius: 10px;
+    background: #fff;
+    color: #172321;
+    margin-bottom: 12px;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .btn-in { background: #2F8F5B; color: #fff; }
+  .btn-out { background: #E86A5B; color: #fff; }
+  .btn-secondary { background: #E8ECEA; color: #172321; }
+  .btn-small {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 12px;
+    background: #E8ECEA;
+    color: #172321;
+    border-radius: 8px;
+  }
+
+  #employeeInfoCard {
+    display: none;
+    margin: -4px 0 14px;
+    padding: 12px 14px;
+    border: 1px solid #D8E2DF;
+    border-radius: 10px;
+    background: #E1EEEB;
+  }
+  #employeeInfoName { font-weight: 700; font-size: 14px; }
+  #employeeInfoMeta { font-size: 12px; color: #4C5C58; margin-top: 2px; }
+
+  #clockOutSection { display: none; border-top: 1px solid #D8E2DF; margin-top: 16px; padding-top: 16px; }
+
+  .task-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #D8E2DF;
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .task-row input[type="text"] {
+    flex: 1 1 120px;
+    min-width: 100px;
+    margin-bottom: 0;
+    padding: 8px;
+    font-size: 13px;
+  }
+  .task-row select {
+    margin-bottom: 0;
+    padding: 8px;
+    font-size: 13px;
+    width: auto;
+  }
+  .taskStatus { min-width: 120px; }
+  .taskRecurring { min-width: 90px; }
+  .removeTaskBtn {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 6px 10px;
+    font-size: 12px;
+    background: #FBE7E2;
+    color: #C0432F;
+    border-radius: 8px;
+    margin-bottom: 0;
+  }
+
+  #status {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  #status.success { display: block; background: #E4F3EA; color: #1a7f37; }
+  #status.error { display: block; background: #FBE7E2; color: #b3261e; }
+
+  hr { border: none; border-top: 1px solid #D8E2DF; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+  <h1>ลงเวลาเข้า-ออกงาน</h1>
+
+  <label for="employeeSelect">เลือกชื่อของคุณ</label>
+  <select id="employeeSelect">
+    <option value="">-- เลือกชื่อ --</option>
+  </select>
+
+  <div id="employeeInfoCard">
+    <div id="employeeInfoName"></div>
+    <div id="employeeInfoMeta"></div>
+  </div>
+
+  <button id="clockInBtn" class="btn-in">เข้างาน</button>
+  <button id="showClockOutBtn" class="btn-out">ออกงาน</button>
+
+  <div id="clockOutSection">
+    <h2>รายการงานที่ทำวันนี้</h2>
+    <div id="taskList"></div>
+    <button id="addTaskBtn" class="btn-secondary" type="button">+ เพิ่มรายการงาน</button>
+    <button id="confirmClockOutBtn" class="btn-out" type="button">ยืนยันออกงาน</button>
+  </div>
+
+  <hr>
+
+  <h1 style="font-size:18px;">ยื่นใบลา</h1>
+  <label>ประเภทลา:</label>
+  <select id="leaveType">
+    <option value="ลากิจ">ลากิจ</option>
+    <option value="ลาป่วย">ลาป่วย</option>
+    <option value="ลาพักร้อน">ลาพักร้อน</option>
+  </select>
+
+  <label>วันที่เริ่มลา:</label>
+  <input type="text" id="leaveStartDate" placeholder="วว/ดด/ปปปป" readonly>
+
+  <label>วันที่สิ้นสุดลา:</label>
+  <input type="text" id="leaveEndDate" placeholder="วว/ดด/ปปปป" readonly>
+
+  <button id="submitLeaveBtn" class="btn-secondary" type="button">ยื่นใบลา</button>
+
+  <div id="status"></div>
+
+<script>
+  var API_URL = 'https://script.google.com/macros/s/AKfycbzZuv9MOZvgdTadHmXFTuVmDE6zPVW6zUvwu7gxmfqrYQLjUo20iDuwqe5HgEjJMYjd/exec';
+
+  function apiGet(action, params) {
+    params = params || {};
+    var query = new URLSearchParams(Object.assign({ action: action }, params)).toString();
+    return fetch(API_URL + '?' + query).then(function (res) { return res.json(); });
+  }
+
+  function apiPost(action, data) {
+    var body = Object.assign({ action: action }, data);
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    }).then(function (res) { return res.json(); });
+  }
+
+  function showStatus(message, isError) {
+    var el = document.getElementById('status');
+    el.textContent = message;
+    el.className = isError ? 'error' : 'success';
+  }
+
+  function getSelectedEmployeeId() {
+    var id = document.getElementById('employeeSelect').value;
+    if (!id) {
+      showStatus('กรุณาเลือกชื่อของคุณก่อน', true);
+    }
+    return id;
+  }
+
+  function withLocation(callback) {
+    if (!navigator.geolocation) {
+      showStatus('เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง', true);
+      return;
+    }
+    showStatus('กำลังขอตำแหน่ง...', false);
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        callback(pos.coords.latitude, pos.coords.longitude);
+      },
+      function () {
+        showStatus('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาอนุญาตการเข้าถึงตำแหน่ง', true);
+      }
+    );
+  }
+
+  function loadEmployees() {
+    apiGet('getActiveEmployeesForDropdown').then(function (res) {
+      if (!res.success) { showStatus('โหลดรายชื่อไม่สำเร็จ: ' + res.error, true); return; }
+      var select = document.getElementById('employeeSelect');
+      res.data.forEach(function (emp) {
+        var option = document.createElement('option');
+        option.value = emp.employeeId;
+        option.textContent = emp.nickname;
+        select.appendChild(option);
+      });
+      var savedId = localStorage.getItem('hr_selected_employee');
+      if (savedId) {
+        select.value = savedId;
+        showEmployeeInfo(savedId);
+      }
+    }).catch(function (err) {
+      showStatus('เชื่อมต่อ API ไม่สำเร็จ: ' + err.message, true);
+    });
+  }
+
+  function showEmployeeInfo(employeeId) {
+    var card = document.getElementById('employeeInfoCard');
+    if (!employeeId) {
+      card.style.display = 'none';
+      return;
+    }
+    apiGet('getEmployeeInfo', { employeeId: employeeId }).then(function (res) {
+      if (!res.success || !res.data) { card.style.display = 'none'; return; }
+      document.getElementById('employeeInfoName').textContent = res.data.name;
+      document.getElementById('employeeInfoMeta').textContent = res.data.position + ' · ' + res.data.department;
+      card.style.display = 'block';
+    });
+  }
+
+  document.getElementById('employeeSelect').addEventListener('change', function (e) {
+    localStorage.setItem('hr_selected_employee', e.target.value);
+    showEmployeeInfo(e.target.value);
+  });
+
+  document.getElementById('clockInBtn').addEventListener('click', function () {
+    var employeeId = getSelectedEmployeeId();
+    if (!employeeId) return;
+    withLocation(function (lat, lng) {
+      showStatus('กำลังบันทึกเข้างาน...', false);
+      apiPost('clockIn', { employeeId: employeeId, lat: lat, lng: lng }).then(function (res) {
+        if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        var msg = 'บันทึกเข้างานสำเร็จ';
+        if (res.data.isLate) msg += ' (มาสาย)';
+        if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
+        showStatus(msg, false);
+      }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
+    });
+  });
+
+  document.getElementById('showClockOutBtn').addEventListener('click', function () {
+    var employeeId = getSelectedEmployeeId();
+    if (!employeeId) return;
+    document.getElementById('clockOutSection').style.display = 'block';
+    if (document.getElementById('taskList').children.length === 0) {
+      var dailyTasks = getDailyTasks(employeeId);
+      if (dailyTasks.length > 0) {
+        dailyTasks.forEach(function (name) { addTaskRow(name, 'Daily'); });
+      } else {
+        addTaskRow();
+      }
+    }
+  });
+
+  function getDailyTasks(employeeId) {
+    var raw = localStorage.getItem('hr_daily_tasks_' + employeeId);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveDailyTasks(employeeId, names) {
+    localStorage.setItem('hr_daily_tasks_' + employeeId, JSON.stringify(names));
+  }
+
+  function addTaskRow(prefillName, prefillRecurring) {
+    var taskList = document.getElementById('taskList');
+    var row = document.createElement('div');
+    row.className = 'task-row';
+    row.innerHTML =
+      '<input type="text" placeholder="ชื่องาน" class="taskName">' +
+      '<select class="taskStatus">' +
+      '<option value="complete">complete</option>' +
+      '<option value="in progress">in progress</option>' +
+      '</select>' +
+      '<select class="taskRecurring">' +
+      '<option value="General">General</option>' +
+      '<option value="Daily">Daily</option>' +
+      '<option value="Weekly">Weekly</option>' +
+      '<option value="Monthly">Monthly</option>' +
+      '</select>' +
+      '<input type="text" placeholder="ลิงก์งาน (ถ้ามี)" class="taskLink">' +
+      '<input type="text" placeholder="หมายเหตุ (ถ้ามี)" class="taskNote">' +
+      '<button type="button" class="removeTaskBtn">ลบ</button>';
+    if (prefillName) { row.querySelector('.taskName').value = prefillName; }
+    if (prefillRecurring) { row.querySelector('.taskRecurring').value = prefillRecurring; }
+    row.querySelector('.removeTaskBtn').addEventListener('click', function () { row.remove(); });
+    taskList.appendChild(row);
+  }
+
+  document.getElementById('addTaskBtn').addEventListener('click', function () { addTaskRow(); });
+
+  document.getElementById('confirmClockOutBtn').addEventListener('click', function () {
+    var employeeId = getSelectedEmployeeId();
+    if (!employeeId) return;
+
+    var tasks = [];
+    document.querySelectorAll('.task-row').forEach(function (row) {
+      var name = row.querySelector('.taskName').value.trim();
+      var status = row.querySelector('.taskStatus').value;
+      var recurring = row.querySelector('.taskRecurring').value;
+      var link = row.querySelector('.taskLink').value.trim();
+      var note = row.querySelector('.taskNote').value.trim();
+      if (name) {
+        tasks.push({ name: name, status: status, recurring: recurring, link: link, note: note });
+      }
+    });
+
+    if (tasks.length === 0) {
+      showStatus('กรุณากรอกรายการงานอย่างน้อย 1 รายการ', true);
+      return;
+    }
+
+    var dailyNames = tasks.filter(function (t) { return t.recurring === 'Daily'; })
+      .map(function (t) { return t.name; });
+    saveDailyTasks(employeeId, dailyNames);
+
+    withLocation(function (lat, lng) {
+      showStatus('กำลังบันทึกออกงาน...', false);
+      apiPost('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks }).then(function (res) {
+        if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        var msg = 'บันทึกออกงานสำเร็จ';
+        if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
+        showStatus(msg, false);
+      }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
+    });
+  });
+
+  document.getElementById('submitLeaveBtn').addEventListener('click', function () {
+    var employeeId = getSelectedEmployeeId();
+    if (!employeeId) return;
+    var leaveType = document.getElementById('leaveType').value;
+    var startDate = document.getElementById('leaveStartDate').value;
+    var endDate = document.getElementById('leaveEndDate').value;
+
+    if (!startDate || !endDate) {
+      showStatus('กรุณาเลือกวันที่ลาให้ครบ', true);
+      return;
+    }
+
+    showStatus('กำลังบันทึกใบลา...', false);
+    apiPost('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate }).then(function (res) {
+      if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+      showStatus('ยื่นใบลาสำเร็จ (สถานะ: ' + res.data.status + ')', false);
+    }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
+  });
+
+  flatpickr('#leaveStartDate', { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', static: true });
+  flatpickr('#leaveEndDate', { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', static: true });
+
+  loadEmployees();
+</script>
+
+</body>
+</html>
