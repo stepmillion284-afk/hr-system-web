@@ -7,62 +7,79 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
+  :root {
+    --ink: #172321;
+    --ink-soft: #4C5C58;
+    --paper: #F4F7F6;
+    --surface: #FFFFFF;
+    --surface-sunk: #EBF0EE;
+    --line: #D8E2DF;
+    --line-strong: #B9C7C3;
+    --accent: #0E6B5C;
+    --accent-dim: #0A5148;
+    --accent-soft: #E1EEEB;
+    --ok: #2F8F5B;
+    --ok-soft: #E4F3EA;
+    --warn: #C97C1E;
+    --warn-soft: #FBEEDD;
+    --danger: #C0432F;
+    --danger-soft: #FBE7E2;
+  }
   * { box-sizing: border-box; }
   body {
     font-family: 'Noto Sans Thai', 'Sarabun', -apple-system, 'Segoe UI', Tahoma, sans-serif;
     max-width: 480px;
     margin: 0 auto;
-    padding: 20px 16px 60px;
-    background: #F4F7F6;
-    color: #172321;
+    padding: 24px 18px 60px;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
   }
-  h1 { font-size: 20px; margin: 0 0 16px; }
-  h2 { font-size: 16px; margin: 24px 0 10px; }
-  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4C5C58; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .subtitle { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 20px; }
+  h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; margin: 24px 0 12px; color: var(--ink-soft); text-transform: uppercase; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-soft); }
   select, input[type="text"] {
     width: 100%;
-    padding: 10px 12px;
+    padding: 11px 13px;
     font-size: 14px;
-    border: 1px solid #B9C7C3;
+    border: 1px solid var(--line-strong);
     border-radius: 10px;
-    background: #fff;
-    color: #172321;
+    background: var(--surface);
+    color: var(--ink);
     margin-bottom: 12px;
+    font-family: inherit;
   }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   button {
     width: 100%;
-    padding: 14px;
+    padding: 15px;
     font-size: 15px;
     font-weight: 700;
     border: none;
     border-radius: 12px;
     cursor: pointer;
     margin-bottom: 10px;
+    font-family: inherit;
   }
-  .btn-in { background: #2F8F5B; color: #fff; }
-  .btn-out { background: #E86A5B; color: #fff; }
-  .btn-secondary { background: #E8ECEA; color: #172321; }
-  .btn-small {
-    width: auto;
-    padding: 6px 10px;
-    font-size: 12px;
-    background: #E8ECEA;
-    color: #172321;
-    border-radius: 8px;
-  }
+  button:active { transform: translateY(1px); }
+  .btn-in { background: var(--accent); color: #fff; }
+  .btn-out { background: var(--danger); color: #fff; }
+  .btn-secondary { background: var(--surface-sunk); color: var(--ink); }
+  .hint { font-size: 12px; color: var(--ink-soft); margin: -6px 0 14px; }
 
-  #employeeInfoCard {
-    display: none;
-    margin: -4px 0 14px;
-    padding: 12px 14px;
-    border: 1px solid #D8E2DF;
-    border-radius: 10px;
-    background: #E1EEEB;
+  .card {
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    margin-bottom: 14px;
   }
-  #employeeInfoName { font-weight: 700; font-size: 14px; }
-  #employeeInfoMeta { font-size: 12px; color: #4C5C58; margin-top: 2px; }
+  #employeeInfoCard { display: none; background: var(--accent-soft); border-color: transparent; }
+  #employeeInfoName { font-weight: 700; font-size: 14.5px; }
+  #employeeInfoMeta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
-  #clockOutSection { display: none; border-top: 1px solid #D8E2DF; margin-top: 16px; padding-top: 16px; }
+  #clockOutSection { display: none; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 4px; }
 
   .task-row {
     display: flex;
@@ -70,21 +87,21 @@
     gap: 6px;
     margin-bottom: 10px;
     align-items: center;
-    background: #fff;
-    border: 1px solid #D8E2DF;
-    border-radius: 10px;
-    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px;
   }
   .task-row input[type="text"] {
     flex: 1 1 120px;
     min-width: 100px;
     margin-bottom: 0;
-    padding: 8px;
+    padding: 8px 10px;
     font-size: 13px;
   }
   .task-row select {
     margin-bottom: 0;
-    padding: 8px;
+    padding: 8px 10px;
     font-size: 13px;
     width: auto;
   }
@@ -93,10 +110,10 @@
   .removeTaskBtn {
     flex: 0 0 auto;
     width: auto;
-    padding: 6px 10px;
+    padding: 7px 11px;
     font-size: 12px;
-    background: #FBE7E2;
-    color: #C0432F;
+    background: var(--danger-soft);
+    color: var(--danger);
     border-radius: 8px;
     margin-bottom: 0;
   }
@@ -104,29 +121,35 @@
   #status {
     display: none;
     margin-top: 16px;
-    padding: 12px 14px;
-    border-radius: 10px;
+    padding: 13px 15px;
+    border-radius: 12px;
     font-size: 13px;
+    font-weight: 600;
   }
-  #status.success { display: block; background: #E4F3EA; color: #1a7f37; }
-  #status.error { display: block; background: #FBE7E2; color: #b3261e; }
+  #status.success { display: block; background: var(--ok-soft); color: var(--ok); }
+  #status.error { display: block; background: var(--danger-soft); color: var(--danger); }
 
-  hr { border: none; border-top: 1px solid #D8E2DF; margin: 24px 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0 20px; }
 </style>
 </head>
 <body>
 
   <h1>ลงเวลาเข้า-ออกงาน</h1>
+  <p class="subtitle" id="todayLabel"></p>
 
   <label for="employeeSelect">เลือกชื่อของคุณ</label>
   <select id="employeeSelect">
     <option value="">-- เลือกชื่อ --</option>
   </select>
 
-  <div id="employeeInfoCard">
+  <div id="employeeInfoCard" class="card">
     <div id="employeeInfoName"></div>
     <div id="employeeInfoMeta"></div>
   </div>
+
+  <label for="locationNote">สถานที่ (กรอกเฉพาะกรณีไม่ได้อยู่ที่ออฟฟิศ/ไม่ได้อยู่บ้าน)</label>
+  <input type="text" id="locationNote" placeholder="เช่น ไปประชุมลูกค้า, ร้านกาแฟ ABC">
+  <p class="hint">ถ้าอยู่ที่ออฟฟิศ หรือทำงานที่บ้านตามปกติ ไม่ต้องกรอกช่องนี้</p>
 
   <button id="clockInBtn" class="btn-in">เข้างาน</button>
   <button id="showClockOutBtn" class="btn-out">ออกงาน</button>
@@ -160,6 +183,14 @@
 
 <script>
   var API_URL = 'https://script.google.com/macros/s/AKfycbzZuv9MOZvgdTadHmXFTuVmDE6zPVW6zUvwu7gxmfqrYQLjUo20iDuwqe5HgEjJMYjd/exec';
+
+  var THAI_DAYS = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+  var THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  (function () {
+    var d = new Date();
+    document.getElementById('todayLabel').textContent =
+      THAI_DAYS[d.getDay()] + ' ที่ ' + d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+  })();
 
   function apiCall(action, params) {
     params = params || {};
@@ -244,9 +275,10 @@
   document.getElementById('clockInBtn').addEventListener('click', function () {
     var employeeId = getSelectedEmployeeId();
     if (!employeeId) return;
+    var locationNote = document.getElementById('locationNote').value.trim();
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกเข้างาน...', false);
-      apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng }).then(function (res) {
+      apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng, locationNote: locationNote }).then(function (res) {
         if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         var msg = 'บันทึกเข้างานสำเร็จ';
         if (res.data.isLate) msg += ' (มาสาย)';
@@ -331,9 +363,11 @@
       .map(function (t) { return t.name; });
     saveDailyTasks(employeeId, dailyNames);
 
+    var locationNote = document.getElementById('locationNote').value.trim();
+
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกออกงาน...', false);
-      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks }).then(function (res) {
+      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks, locationNote: locationNote }).then(function (res) {
         if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         var msg = 'บันทึกออกงานสำเร็จ';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
