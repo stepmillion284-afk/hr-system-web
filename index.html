@@ -8,78 +8,124 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
   :root {
+    --teal: #12967F;
+    --teal-dark: #0C7A67;
+    --teal-soft: #E3F3EF;
     --ink: #172321;
-    --ink-soft: #4C5C58;
-    --paper: #F4F7F6;
+    --ink-soft: #64756F;
     --surface: #FFFFFF;
-    --surface-sunk: #EBF0EE;
-    --line: #D8E2DF;
-    --line-strong: #B9C7C3;
-    --accent: #0E6B5C;
-    --accent-dim: #0A5148;
-    --accent-soft: #E1EEEB;
+    --surface-sunk: #F3F7F6;
+    --line: #E7EEEC;
+    --danger: #E2574C;
+    --danger-soft: #FDEBE9;
     --ok: #2F8F5B;
     --ok-soft: #E4F3EA;
-    --warn: #C97C1E;
+    --warn: #D98A2B;
     --warn-soft: #FBEEDD;
-    --danger: #C0432F;
-    --danger-soft: #FBE7E2;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     font-family: 'Noto Sans Thai', 'Sarabun', -apple-system, 'Segoe UI', Tahoma, sans-serif;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 24px 18px 60px;
-    background: var(--paper);
+    margin: 0;
+    background: linear-gradient(180deg, var(--teal) 0%, var(--teal-dark) 100%);
     color: var(--ink);
     line-height: 1.5;
+    min-height: 100vh;
+    padding: 22px 14px 40px;
   }
-  h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .subtitle { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 20px; }
-  h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; margin: 24px 0 12px; color: var(--ink-soft); text-transform: uppercase; }
-  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-soft); }
+  .app-shell {
+    max-width: 440px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-radius: 26px;
+    box-shadow: 0 20px 44px -20px rgba(0,0,0,0.35);
+    padding: 22px 20px 26px;
+    overflow: hidden;
+  }
+  .app-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .app-brand { display: flex; align-items: center; gap: 8px; }
+  .app-brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
+  .app-brand span { font-weight: 800; font-size: 15px; letter-spacing: -0.01em; }
+  .app-topbar .subtitle-small { font-size: 11.5px; color: var(--ink-soft); }
+
+  h1 { font-size: 21px; font-weight: 800; margin: 14px 0 2px; letter-spacing: -0.01em; }
+  .subtitle { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 18px; }
+  h2 { font-size: 13px; font-weight: 800; letter-spacing: 0.03em; margin: 22px 0 10px; color: var(--ink-soft); text-transform: uppercase; }
+
+  label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; color: var(--ink-soft); }
   select, input[type="text"] {
     width: 100%;
-    padding: 11px 13px;
+    padding: 12px 14px;
     font-size: 14px;
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-sunk);
     color: var(--ink);
     margin-bottom: 12px;
     font-family: inherit;
   }
-  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  button {
-    width: 100%;
-    padding: 15px;
-    font-size: 15px;
-    font-weight: 700;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-bottom: 10px;
-    font-family: inherit;
+  select:focus, input:focus { outline: none; border-color: var(--teal); background: var(--surface); }
+
+  /* today card */
+  .today-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--teal-soft);
+    border-radius: 16px;
+    padding: 13px 15px;
+    margin-bottom: 16px;
   }
-  button:active { transform: translateY(1px); }
-  .btn-in { background: var(--accent); color: #fff; }
-  .btn-out { background: var(--danger); color: #fff; }
-  .btn-secondary { background: var(--surface-sunk); color: var(--ink); }
-  .hint { font-size: 12px; color: var(--ink-soft); margin: -6px 0 14px; }
+  .today-card .icon-badge {
+    width: 38px; height: 38px; border-radius: 12px; background: var(--teal);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .today-card .icon-badge svg { width: 19px; height: 19px; color: #fff; }
+  .today-card .lines .l1 { font-weight: 800; font-size: 13.5px; }
+  .today-card .lines .l2 { font-size: 11.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
   .card {
     padding: 13px 15px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--surface);
+    border-radius: 14px;
+    background: var(--surface-sunk);
     margin-bottom: 14px;
   }
-  #employeeInfoCard { display: none; background: var(--accent-soft); border-color: transparent; }
-  #employeeInfoName { font-weight: 700; font-size: 14.5px; }
+  #employeeInfoCard { display: none; }
+  #employeeInfoName { font-weight: 800; font-size: 14.5px; }
   #employeeInfoMeta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
-  #clockOutSection { display: none; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 4px; }
+  .hint { font-size: 11.5px; color: var(--ink-soft); margin: -6px 0 14px; }
+
+  /* buttons */
+  .btn-row { display: flex; gap: 10px; margin-bottom: 6px; }
+  button {
+    padding: 15px 10px;
+    font-size: 14.5px;
+    font-weight: 800;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  button:active { transform: translateY(1px); }
+  button svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .btn-in { flex: 1; background: var(--teal); color: #fff; border: 1.5px solid var(--teal); }
+  .btn-out { flex: 1; background: #fff; color: var(--teal); border: 1.5px solid var(--teal); }
+  .btn-block { width: 100%; margin-bottom: 10px; }
+  .btn-secondary { background: var(--surface-sunk); color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-confirm { background: var(--danger); color: #fff; border: 1.5px solid var(--danger); }
+
+  #clockOutSection { display: none; border-top: 1px dashed var(--line); margin-top: 20px; padding-top: 6px; }
 
   .task-row {
     display: flex;
@@ -87,9 +133,8 @@
     gap: 6px;
     margin-bottom: 10px;
     align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 12px;
+    background: var(--surface-sunk);
+    border-radius: 14px;
     padding: 11px;
   }
   .task-row input[type="text"] {
@@ -98,41 +143,49 @@
     margin-bottom: 0;
     padding: 8px 10px;
     font-size: 13px;
+    background: var(--surface);
   }
   .task-row select {
     margin-bottom: 0;
     padding: 8px 10px;
     font-size: 13px;
     width: auto;
+    background: var(--surface);
   }
   .taskStatus { min-width: 120px; }
   .taskRecurring { min-width: 90px; }
   .removeTaskBtn {
     flex: 0 0 auto;
-    width: auto;
     padding: 7px 11px;
     font-size: 12px;
     background: var(--danger-soft);
     color: var(--danger);
-    border-radius: 8px;
-    margin-bottom: 0;
+    border: none;
+    border-radius: 10px;
   }
 
   #status {
     display: none;
     margin-top: 16px;
     padding: 13px 15px;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
   #status.success { display: block; background: var(--ok-soft); color: var(--ok); }
   #status.error { display: block; background: var(--danger-soft); color: var(--danger); }
 
-  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0 20px; }
+  hr { border: none; border-top: 1px dashed var(--line); margin: 26px 0 18px; }
 </style>
 </head>
 <body>
+
+<div class="app-shell">
+
+  <div class="app-topbar">
+    <div class="app-brand"><span class="dot"></span><span>hr-system</span></div>
+    <div class="subtitle-small" id="todayLabelSmall"></div>
+  </div>
 
   <h1>ลงเวลาเข้า-ออกงาน</h1>
   <p class="subtitle" id="todayLabel"></p>
@@ -147,18 +200,36 @@
     <div id="employeeInfoMeta"></div>
   </div>
 
+  <div class="today-card">
+    <div class="icon-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </div>
+    <div class="lines">
+      <div class="l1" id="todayLabelCard"></div>
+      <div class="l2" id="nowClock"></div>
+    </div>
+  </div>
+
   <label for="locationNote">สถานที่ (กรอกเฉพาะกรณีไม่ได้อยู่ที่ออฟฟิศ/ไม่ได้อยู่บ้าน)</label>
   <input type="text" id="locationNote" placeholder="เช่น ไปประชุมลูกค้า, ร้านกาแฟ ABC">
   <p class="hint">ถ้าอยู่ที่ออฟฟิศ หรือทำงานที่บ้านตามปกติ ไม่ต้องกรอกช่องนี้</p>
 
-  <button id="clockInBtn" class="btn-in">เข้างาน</button>
-  <button id="showClockOutBtn" class="btn-out">ออกงาน</button>
+  <div class="btn-row">
+    <button id="clockInBtn" class="btn-in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 19V5a2 2 0 0 0-2-2h-6"/></svg>
+      บันทึกเข้า
+    </button>
+    <button id="showClockOutBtn" class="btn-out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 17l-5-5 5-5"/><path d="M9 12h12"/><path d="M3 19V5a2 2 0 0 1 2-2h6"/></svg>
+      บันทึกออก
+    </button>
+  </div>
 
   <div id="clockOutSection">
     <h2>รายการงานที่ทำวันนี้</h2>
     <div id="taskList"></div>
-    <button id="addTaskBtn" class="btn-secondary" type="button">+ เพิ่มรายการงาน</button>
-    <button id="confirmClockOutBtn" class="btn-out" type="button">ยืนยันออกงาน</button>
+    <button id="addTaskBtn" class="btn-secondary btn-block" type="button">+ เพิ่มรายการงาน</button>
+    <button id="confirmClockOutBtn" class="btn-confirm btn-block" type="button">ยืนยันออกงาน</button>
   </div>
 
   <hr>
@@ -177,20 +248,31 @@
   <label>วันที่สิ้นสุดลา:</label>
   <input type="text" id="leaveEndDate" placeholder="วว/ดด/ปปปป" readonly>
 
-  <button id="submitLeaveBtn" class="btn-secondary" type="button">ยื่นใบลา</button>
+  <button id="submitLeaveBtn" class="btn-secondary btn-block" type="button">ยื่นใบลา</button>
 
   <div id="status"></div>
+
+</div>
 
 <script>
   var API_URL = 'https://script.google.com/macros/s/AKfycbzZuv9MOZvgdTadHmXFTuVmDE6zPVW6zUvwu7gxmfqrYQLjUo20iDuwqe5HgEjJMYjd/exec';
 
   var THAI_DAYS = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
   var THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-  (function () {
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  function renderToday() {
     var d = new Date();
-    document.getElementById('todayLabel').textContent =
-      THAI_DAYS[d.getDay()] + ' ที่ ' + d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
-  })();
+    var label = THAI_DAYS[d.getDay()] + ' ที่ ' + d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+    var timeLabel = pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    document.getElementById('todayLabel').textContent = label;
+    document.getElementById('todayLabelCard').textContent = label;
+    document.getElementById('todayLabelSmall').textContent = timeLabel;
+    document.getElementById('nowClock').textContent = 'เวลาปัจจุบัน ' + timeLabel + ' น.';
+  }
+  renderToday();
+  setInterval(renderToday, 1000);
 
   function apiCall(action, params) {
     params = params || {};
