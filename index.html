@@ -161,19 +161,15 @@
 <script>
   var API_URL = 'https://script.google.com/macros/s/AKfycbzZuv9MOZvgdTadHmXFTuVmDE6zPVW6zUvwu7gxmfqrYQLjUo20iDuwqe5HgEjJMYjd/exec';
 
-  function apiGet(action, params) {
+  function apiCall(action, params) {
     params = params || {};
-    var query = new URLSearchParams(Object.assign({ action: action }, params)).toString();
-    return fetch(API_URL + '?' + query).then(function (res) { return res.json(); });
-  }
-
-  function apiPost(action, data) {
-    var body = Object.assign({ action: action }, data);
-    return fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body)
-    }).then(function (res) { return res.json(); });
+    var pairs = ['action=' + encodeURIComponent(action)];
+    Object.keys(params).forEach(function (key) {
+      var value = params[key];
+      if (typeof value === 'object') value = JSON.stringify(value);
+      pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+    });
+    return fetch(API_URL + '?' + pairs.join('&')).then(function (res) { return res.json(); });
   }
 
   function showStatus(message, isError) {
@@ -207,7 +203,7 @@
   }
 
   function loadEmployees() {
-    apiGet('getActiveEmployeesForDropdown').then(function (res) {
+    apiCall('getActiveEmployeesForDropdown').then(function (res) {
       if (!res.success) { showStatus('โหลดรายชื่อไม่สำเร็จ: ' + res.error, true); return; }
       var select = document.getElementById('employeeSelect');
       res.data.forEach(function (emp) {
@@ -232,7 +228,7 @@
       card.style.display = 'none';
       return;
     }
-    apiGet('getEmployeeInfo', { employeeId: employeeId }).then(function (res) {
+    apiCall('getEmployeeInfo', { employeeId: employeeId }).then(function (res) {
       if (!res.success || !res.data) { card.style.display = 'none'; return; }
       document.getElementById('employeeInfoName').textContent = res.data.name;
       document.getElementById('employeeInfoMeta').textContent = res.data.position + ' · ' + res.data.department;
@@ -250,7 +246,7 @@
     if (!employeeId) return;
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกเข้างาน...', false);
-      apiPost('clockIn', { employeeId: employeeId, lat: lat, lng: lng }).then(function (res) {
+      apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng }).then(function (res) {
         if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         var msg = 'บันทึกเข้างานสำเร็จ';
         if (res.data.isLate) msg += ' (มาสาย)';
@@ -337,7 +333,7 @@
 
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกออกงาน...', false);
-      apiPost('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks }).then(function (res) {
+      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks }).then(function (res) {
         if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         var msg = 'บันทึกออกงานสำเร็จ';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
@@ -359,7 +355,7 @@
     }
 
     showStatus('กำลังบันทึกใบลา...', false);
-    apiPost('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate }).then(function (res) {
+    apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate }).then(function (res) {
       if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
       showStatus('ยื่นใบลาสำเร็จ (สถานะ: ' + res.data.status + ')', false);
     }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
