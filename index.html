@@ -116,6 +116,8 @@
     gap: 8px;
   }
   button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  button:disabled:active { transform: none; }
   button svg { width: 18px; height: 18px; flex-shrink: 0; }
 
   .btn-in { flex: 1; background: var(--teal); color: #fff; border: 1.5px solid var(--teal); }
@@ -175,6 +177,28 @@
   #status.error { display: block; background: var(--danger-soft); color: var(--danger); }
 
   hr { border: none; border-top: 1px dashed var(--line); margin: 26px 0 18px; }
+
+  /* today status card */
+  #todayStatusCard { display: none; }
+  .status-card-title { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 13px; margin-bottom: 8px; }
+  .status-card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
+  .status-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; gap: 10px; }
+  .status-label { color: var(--ink-soft); font-weight: 700; flex-shrink: 0; }
+  .status-value { font-weight: 800; text-align: right; }
+
+  .pill { display: inline-block; padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+  .pill-none { background: var(--surface); color: var(--ink-soft); border: 1.5px solid var(--line); }
+  .pill-wait { background: var(--warn-soft); color: var(--warn); }
+  .pill-done { background: var(--ok-soft); color: var(--ok); }
+
+  /* leave summary card */
+  #leaveSummaryCard { display: none; }
+  #leaveSummaryCard h2 { margin-top: 0; }
+  .leave-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13px; gap: 10px; }
+  .leave-item:last-child { border-bottom: none; }
+  .leave-type { font-weight: 800; flex-shrink: 0; }
+  .leave-detail { color: var(--ink-soft); text-align: right; }
+  .leave-remaining { font-weight: 800; color: var(--teal); }
 </style>
 </head>
 <body>
@@ -199,6 +223,22 @@
     <div id="employeeInfoMeta"></div>
   </div>
 
+  <div id="todayStatusCard" class="card">
+    <div class="status-card-title"><span class="dot"></span><span>สรุปวันนี้</span></div>
+    <div class="status-row">
+      <span class="status-label">เวลาทำงาน</span>
+      <span id="statusWorkHours" class="status-value">-</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">สถานะ</span>
+      <span id="statusPill" class="pill pill-none">-</span>
+    </div>
+    <div class="status-row" id="statusLocationRow" style="display:none;">
+      <span class="status-label">สถานที่เข้างาน</span>
+      <span id="statusLocation" class="status-value">-</span>
+    </div>
+  </div>
+
   <div class="today-card">
     <div class="icon-badge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -216,11 +256,11 @@
   <div class="btn-row">
     <button id="clockInBtn" class="btn-in">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 19V5a2 2 0 0 0-2-2h-6"/></svg>
-      บันทึกเข้า
+      <span id="clockInBtnLabel">บันทึกเข้า</span>
     </button>
     <button id="showClockOutBtn" class="btn-out">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 17l-5-5 5-5"/><path d="M9 12h12"/><path d="M3 19V5a2 2 0 0 1 2-2h6"/></svg>
-      บันทึกออก
+      <span id="showClockOutBtnLabel">บันทึกออก</span>
     </button>
   </div>
 
@@ -229,6 +269,11 @@
     <div id="taskList"></div>
     <button id="addTaskBtn" class="btn-secondary btn-block" type="button">+ เพิ่มรายการงาน</button>
     <button id="confirmClockOutBtn" class="btn-confirm btn-block" type="button">ยืนยันออกงาน</button>
+  </div>
+
+  <div id="leaveSummaryCard" class="card">
+    <h2>ภาพรวมสิทธิ์การลา</h2>
+    <div id="leaveSummaryList"></div>
   </div>
 
   <hr>
@@ -298,9 +343,10 @@
     return id;
   }
 
-  function withLocation(callback) {
+  function withLocation(callback, onError) {
     if (!navigator.geolocation) {
       showStatus('เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง', true);
+      if (onError) onError();
       return;
     }
     showStatus('กำลังขอตำแหน่ง...', false);
@@ -310,8 +356,45 @@
       },
       function () {
         showStatus('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาอนุญาตการเข้าถึงตำแหน่ง', true);
+        if (onError) onError();
       }
     );
+  }
+
+  function todayKeyStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function getClockStatus(employeeId) {
+    return localStorage.getItem('hr_clock_status_' + employeeId + '_' + todayKeyStr());
+  }
+
+  function setClockStatus(employeeId, status) {
+    localStorage.setItem('hr_clock_status_' + employeeId + '_' + todayKeyStr(), status);
+  }
+
+  function applyClockButtonState(employeeId) {
+    var clockInBtn = document.getElementById('clockInBtn');
+    var showClockOutBtn = document.getElementById('showClockOutBtn');
+    var clockInLabel = document.getElementById('clockInBtnLabel');
+    var showClockOutLabel = document.getElementById('showClockOutBtnLabel');
+    var status = employeeId ? getClockStatus(employeeId) : null;
+
+    clockInBtn.disabled = false;
+    showClockOutBtn.disabled = false;
+    clockInLabel.textContent = 'บันทึกเข้า';
+    showClockOutLabel.textContent = 'บันทึกออก';
+
+    if (status === 'in' || status === 'out') {
+      clockInBtn.disabled = true;
+      clockInLabel.textContent = 'บันทึกเข้าแล้ว';
+    }
+    if (status === 'out') {
+      showClockOutBtn.disabled = true;
+      showClockOutLabel.textContent = 'บันทึกออกแล้ว';
+      document.getElementById('clockOutSection').style.display = 'none';
+    }
   }
 
   function loadEmployees() {
@@ -336,6 +419,9 @@
 
   function showEmployeeInfo(employeeId) {
     var card = document.getElementById('employeeInfoCard');
+    applyClockButtonState(employeeId);
+    loadTodayStatus(employeeId);
+    loadLeaveSummary(employeeId);
     if (!employeeId) {
       card.style.display = 'none';
       return;
@@ -348,6 +434,78 @@
     });
   }
 
+  function formatScheduleLabel(status) {
+    if (status.isExempt) return 'ไม่กำหนดเวลา';
+    if (status.isFlexibleSchedule) return 'ทำงาน ' + status.standardHours + ' ชม. (ไม่กำหนดเวลาเข้า)';
+    if (!status.standardStartTime) return '-';
+    return status.standardStartTime + ' - ' + status.standardEndTime + ' (' + status.standardHours + ' ชม.)';
+  }
+
+  function renderTodayStatus(status) {
+    var card = document.getElementById('todayStatusCard');
+    var pill = document.getElementById('statusPill');
+    document.getElementById('statusWorkHours').textContent = formatScheduleLabel(status);
+
+    pill.className = 'pill';
+    if (status.status === 'working') {
+      pill.classList.add('pill-wait');
+      pill.textContent = 'กำลังทำงาน (รอบันทึกออก)';
+    } else if (status.status === 'done') {
+      pill.classList.add('pill-done');
+      pill.textContent = 'บันทึกออกแล้ว';
+    } else {
+      pill.classList.add('pill-none');
+      pill.textContent = 'ยังไม่ได้ลงเวลา';
+    }
+
+    var locationRow = document.getElementById('statusLocationRow');
+    if (status.location) {
+      document.getElementById('statusLocation').textContent = status.location;
+      locationRow.style.display = 'flex';
+    } else {
+      locationRow.style.display = 'none';
+    }
+
+    card.style.display = 'block';
+  }
+
+  function loadTodayStatus(employeeId) {
+    var card = document.getElementById('todayStatusCard');
+    if (!employeeId) { card.style.display = 'none'; return; }
+    apiCall('getTodayStatus', { employeeId: employeeId }).then(function (res) {
+      if (!res.success) { card.style.display = 'none'; return; }
+      renderTodayStatus(res.data);
+    }).catch(function () { card.style.display = 'none'; });
+  }
+
+  function renderLeaveSummary(summary) {
+    var list = document.getElementById('leaveSummaryList');
+    list.innerHTML = '';
+    ['ลากิจ', 'ลาป่วย', 'ลาพักร้อน'].forEach(function (type) {
+      var info = summary[type];
+      var row = document.createElement('div');
+      row.className = 'leave-item';
+      if (!info || info.entitlement === null) {
+        row.innerHTML = '<span class="leave-type">' + type + '</span><span class="leave-detail">' +
+          (info && info.note ? info.note : 'ยังไม่มีข้อมูล') + '</span>';
+      } else {
+        row.innerHTML = '<span class="leave-type">' + type + '</span><span class="leave-detail">ใช้ไป ' +
+          info.used + ' จาก ' + info.entitlement + ' วัน · <span class="leave-remaining">เหลือ ' + info.remaining + ' วัน</span></span>';
+      }
+      list.appendChild(row);
+    });
+    document.getElementById('leaveSummaryCard').style.display = 'block';
+  }
+
+  function loadLeaveSummary(employeeId) {
+    var card = document.getElementById('leaveSummaryCard');
+    if (!employeeId) { card.style.display = 'none'; return; }
+    apiCall('getLeaveSummary', { employeeId: employeeId }).then(function (res) {
+      if (!res.success) { card.style.display = 'none'; return; }
+      renderLeaveSummary(res.data);
+    }).catch(function () { card.style.display = 'none'; });
+  }
+
   document.getElementById('employeeSelect').addEventListener('change', function (e) {
     localStorage.setItem('hr_selected_employee', e.target.value);
     showEmployeeInfo(e.target.value);
@@ -356,17 +514,22 @@
   document.getElementById('clockInBtn').addEventListener('click', function () {
     var employeeId = getSelectedEmployeeId();
     if (!employeeId) return;
+    var clockInBtn = document.getElementById('clockInBtn');
     var locationNote = document.getElementById('locationNote').value.trim();
+    clockInBtn.disabled = true;
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกเข้างาน...', false);
       apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng, locationNote: locationNote }).then(function (res) {
-        if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        if (!res.success) { clockInBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        setClockStatus(employeeId, 'in');
+        applyClockButtonState(employeeId);
+        loadTodayStatus(employeeId);
         var msg = 'บันทึกเข้างานสำเร็จ';
         if (res.data.isLate) msg += ' (มาสาย)';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
         showStatus(msg, false);
-      }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
-    });
+      }).catch(function (err) { clockInBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
+    }, function () { clockInBtn.disabled = false; });
   });
 
   document.getElementById('showClockOutBtn').addEventListener('click', function () {
@@ -445,16 +608,21 @@
     saveDailyTasks(employeeId, dailyNames);
 
     var locationNote = document.getElementById('locationNote').value.trim();
+    var confirmClockOutBtn = document.getElementById('confirmClockOutBtn');
+    confirmClockOutBtn.disabled = true;
 
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกออกงาน...', false);
       apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks, locationNote: locationNote }).then(function (res) {
-        if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        if (!res.success) { confirmClockOutBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+        setClockStatus(employeeId, 'out');
+        applyClockButtonState(employeeId);
+        loadTodayStatus(employeeId);
         var msg = 'บันทึกออกงานสำเร็จ';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
         showStatus(msg, false);
-      }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
-    });
+      }).catch(function (err) { confirmClockOutBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
+    }, function () { confirmClockOutBtn.disabled = false; });
   });
 
   document.getElementById('submitLeaveBtn').addEventListener('click', function () {
@@ -472,6 +640,7 @@
     showStatus('กำลังบันทึกใบลา...', false);
     apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate }).then(function (res) {
       if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
+      loadLeaveSummary(employeeId);
       showStatus('ยื่นใบลาสำเร็จ (สถานะ: ' + res.data.status + ')', false);
     }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
   });
