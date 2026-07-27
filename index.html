@@ -231,6 +231,14 @@
       <span class="status-label">สถานะ</span>
       <span id="statusPill" class="pill pill-none">-</span>
     </div>
+    <div class="status-row" id="statusClockInRow" style="display:none;">
+      <span class="status-label">เวลาเข้างาน</span>
+      <span id="statusClockIn" class="status-value">-</span>
+    </div>
+    <div class="status-row" id="statusClockOutRow" style="display:none;">
+      <span class="status-label">เวลาออกงาน</span>
+      <span id="statusClockOut" class="status-value">-</span>
+    </div>
     <div class="status-row" id="statusLocationRow" style="display:none;">
       <span class="status-label">สถานที่เข้างาน</span>
       <span id="statusLocation" class="status-value">-</span>
@@ -439,6 +447,12 @@
     return status.standardStartTime + ' - ' + status.standardEndTime + ' (' + status.standardHours + ' ชม.)';
   }
 
+  function formatTimeFromIso(iso) {
+    if (!iso) return '-';
+    var d = new Date(iso);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' น.';
+  }
+
   function renderTodayStatus(status) {
     var card = document.getElementById('todayStatusCard');
     var pill = document.getElementById('statusPill');
@@ -454,6 +468,22 @@
     } else {
       pill.classList.add('pill-none');
       pill.textContent = 'ยังไม่ได้ลงเวลา';
+    }
+
+    var clockInRow = document.getElementById('statusClockInRow');
+    if (status.clockInTime) {
+      document.getElementById('statusClockIn').textContent = formatTimeFromIso(status.clockInTime);
+      clockInRow.style.display = 'flex';
+    } else {
+      clockInRow.style.display = 'none';
+    }
+
+    var clockOutRow = document.getElementById('statusClockOutRow');
+    if (status.clockOutTime) {
+      document.getElementById('statusClockOut').textContent = formatTimeFromIso(status.clockOutTime);
+      clockOutRow.style.display = 'flex';
+    } else {
+      clockOutRow.style.display = 'none';
     }
 
     var locationRow = document.getElementById('statusLocationRow');
