@@ -197,6 +197,34 @@
   .leave-type { font-weight: 800; flex-shrink: 0; }
   .leave-detail { color: var(--ink-soft); text-align: right; }
   .leave-remaining { font-weight: 800; color: var(--teal); }
+
+  /* photo capture */
+  input[type="file"] {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    background: var(--surface-sunk);
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    font-family: inherit;
+  }
+  .photo-input-row { display: flex; gap: 8px; align-items: stretch; }
+  .photo-input-row input[type="file"] { flex: 1 1 auto; min-width: 0; }
+  .btn-screenshot {
+    flex-shrink: 0;
+    padding: 0 14px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    background: var(--surface-sunk);
+    color: var(--ink);
+    border: 1.5px dashed var(--line);
+  }
+  .photo-preview-wrap { display: none; align-items: center; gap: 10px; margin: -2px 0 12px; }
+  .photo-preview-wrap.show { display: flex; }
+  .photo-preview { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; border: 1.5px solid var(--line); flex-shrink: 0; }
+  .photo-remove-btn { font-size: 12px; font-weight: 700; color: var(--danger); background: none; border: none; padding: 4px 0; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -259,6 +287,16 @@
   <input type="text" id="locationNote" placeholder="เช่น ไปประชุมลูกค้า, ร้านกาแฟ ABC">
   <p class="hint">ถ้าอยู่ที่ออฟฟิศ หรือทำงานที่บ้านตามปกติ ไม่ต้องกรอกช่องนี้</p>
 
+  <label for="clockInPhotoInput">ถ่ายรูปตอนเข้างาน (บังคับ)</label>
+  <div class="photo-input-row">
+    <input type="file" accept="image/*" id="clockInPhotoInput">
+    <button type="button" id="clockInScreenshotBtn" class="btn-screenshot">แคปหน้าจอ</button>
+  </div>
+  <div id="clockInPhotoPreviewWrap" class="photo-preview-wrap">
+    <img id="clockInPhotoPreview" class="photo-preview">
+    <button type="button" id="clockInPhotoRemoveBtn" class="photo-remove-btn">ลบรูป</button>
+  </div>
+
   <div class="btn-row">
     <button id="clockInBtn" class="btn-in">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 19V5a2 2 0 0 0-2-2h-6"/></svg>
@@ -274,6 +312,17 @@
     <h2>รายการงานที่ทำวันนี้</h2>
     <div id="taskList"></div>
     <button id="addTaskBtn" class="btn-secondary btn-block" type="button">+ เพิ่มรายการงาน</button>
+
+    <label for="clockOutPhotoInput">ถ่ายรูปตอนออกงาน (บังคับ)</label>
+    <div class="photo-input-row">
+      <input type="file" accept="image/*" id="clockOutPhotoInput">
+      <button type="button" id="clockOutScreenshotBtn" class="btn-screenshot">แคปหน้าจอ</button>
+    </div>
+    <div id="clockOutPhotoPreviewWrap" class="photo-preview-wrap">
+      <img id="clockOutPhotoPreview" class="photo-preview">
+      <button type="button" id="clockOutPhotoRemoveBtn" class="photo-remove-btn">ลบรูป</button>
+    </div>
+
     <button id="confirmClockOutBtn" class="btn-confirm btn-block" type="button">ยืนยันออกงาน</button>
   </div>
 
@@ -297,6 +346,16 @@
 
   <label>วันที่สิ้นสุดลา:</label>
   <input type="date" id="leaveEndDate">
+
+  <label for="leavePhotoInput">แนบรูปหลักฐาน (ไม่บังคับ เช่น ใบรับรองแพทย์)</label>
+  <div class="photo-input-row">
+    <input type="file" accept="image/*" id="leavePhotoInput">
+    <button type="button" id="leaveScreenshotBtn" class="btn-screenshot">แคปหน้าจอ</button>
+  </div>
+  <div id="leavePhotoPreviewWrap" class="photo-preview-wrap">
+    <img id="leavePhotoPreview" class="photo-preview">
+    <button type="button" id="leavePhotoRemoveBtn" class="photo-remove-btn">ลบรูป</button>
+  </div>
 
   <button id="submitLeaveBtn" class="btn-secondary btn-block" type="button">ยื่นใบลา</button>
 
@@ -365,6 +424,127 @@
         if (onError) onError();
       }
     );
+  }
+
+  var clockInPhotoData = '';
+  var clockOutPhotoData = '';
+  var leavePhotoData = '';
+
+  function compressImageFile(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else if (h >= w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = function () { reject(new Error('อ่านไฟล์รูปไม่สำเร็จ')); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () { reject(new Error('อ่านไฟล์รูปไม่สำเร็จ')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function wirePhotoInput(inputId, previewWrapId, previewImgId, removeBtnId, setData) {
+    var input = document.getElementById(inputId);
+    var wrap = document.getElementById(previewWrapId);
+    var img = document.getElementById(previewImgId);
+    var removeBtn = document.getElementById(removeBtnId);
+
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      compressImageFile(file, 220, 0.5).then(function (dataUrl) {
+        setData(dataUrl);
+        img.src = dataUrl;
+        wrap.classList.add('show');
+      }).catch(function (err) {
+        showStatus('เกิดข้อผิดพลาด: ' + err.message, true);
+      });
+    });
+
+    removeBtn.addEventListener('click', function () {
+      setData('');
+      input.value = '';
+      wrap.classList.remove('show');
+    });
+  }
+
+  wirePhotoInput('clockInPhotoInput', 'clockInPhotoPreviewWrap', 'clockInPhotoPreview', 'clockInPhotoRemoveBtn', function (v) { clockInPhotoData = v; });
+  wirePhotoInput('clockOutPhotoInput', 'clockOutPhotoPreviewWrap', 'clockOutPhotoPreview', 'clockOutPhotoRemoveBtn', function (v) { clockOutPhotoData = v; });
+  wirePhotoInput('leavePhotoInput', 'leavePhotoPreviewWrap', 'leavePhotoPreview', 'leavePhotoRemoveBtn', function (v) { leavePhotoData = v; });
+
+  function captureScreenshot(maxDim, quality) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      return Promise.reject(new Error('เบราว์เซอร์นี้ไม่รองรับการแคปหน้าจอ (ใช้ได้เฉพาะคอมพิวเตอร์)'));
+    }
+    return navigator.mediaDevices.getDisplayMedia({ video: true }).then(function (stream) {
+      return new Promise(function (resolve, reject) {
+        var video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+        video.onloadedmetadata = function () {
+          setTimeout(function () {
+            var vw = video.videoWidth, vh = video.videoHeight;
+            var w = vw, h = vh;
+            if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else if (h >= w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+            stream.getTracks().forEach(function (track) { track.stop(); });
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          }, 250);
+        };
+      });
+    });
+  }
+
+  function wireScreenshotButton(buttonId, previewWrapId, previewImgId, setData) {
+    var btn = document.getElementById(buttonId);
+    if (!btn) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      btn.style.display = 'none';
+      return;
+    }
+    btn.addEventListener('click', function () {
+      captureScreenshot(220, 0.5).then(function (dataUrl) {
+        setData(dataUrl);
+        document.getElementById(previewImgId).src = dataUrl;
+        document.getElementById(previewWrapId).classList.add('show');
+      }).catch(function (err) {
+        showStatus('เกิดข้อผิดพลาด: ' + err.message, true);
+      });
+    });
+  }
+
+  wireScreenshotButton('clockInScreenshotBtn', 'clockInPhotoPreviewWrap', 'clockInPhotoPreview', function (v) { clockInPhotoData = v; });
+  wireScreenshotButton('clockOutScreenshotBtn', 'clockOutPhotoPreviewWrap', 'clockOutPhotoPreview', function (v) { clockOutPhotoData = v; });
+  wireScreenshotButton('leaveScreenshotBtn', 'leavePhotoPreviewWrap', 'leavePhotoPreview', function (v) { leavePhotoData = v; });
+
+  function resetClockInPhoto() {
+    clockInPhotoData = '';
+    document.getElementById('clockInPhotoInput').value = '';
+    document.getElementById('clockInPhotoPreviewWrap').classList.remove('show');
+  }
+
+  function resetClockOutPhoto() {
+    clockOutPhotoData = '';
+    document.getElementById('clockOutPhotoInput').value = '';
+    document.getElementById('clockOutPhotoPreviewWrap').classList.remove('show');
+  }
+
+  function resetLeavePhoto() {
+    leavePhotoData = '';
+    document.getElementById('leavePhotoInput').value = '';
+    document.getElementById('leavePhotoPreviewWrap').classList.remove('show');
   }
 
   function todayKeyStr() {
@@ -542,16 +722,21 @@
   document.getElementById('clockInBtn').addEventListener('click', function () {
     var employeeId = getSelectedEmployeeId();
     if (!employeeId) return;
+    if (!clockInPhotoData) {
+      showStatus('กรุณาแนบรูปถ่ายก่อนบันทึกเข้างาน', true);
+      return;
+    }
     var clockInBtn = document.getElementById('clockInBtn');
     var locationNote = document.getElementById('locationNote').value.trim();
     clockInBtn.disabled = true;
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกเข้างาน...', false);
-      apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng, locationNote: locationNote }).then(function (res) {
+      apiCall('clockIn', { employeeId: employeeId, lat: lat, lng: lng, locationNote: locationNote, photo: clockInPhotoData }).then(function (res) {
         if (!res.success) { clockInBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         setClockStatus(employeeId, 'in');
         applyClockButtonState(employeeId);
         loadTodayStatus(employeeId);
+        resetClockInPhoto();
         var msg = 'บันทึกเข้างานสำเร็จ';
         if (res.data.isLate) msg += ' (มาสาย)';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
@@ -631,6 +816,11 @@
       return;
     }
 
+    if (!clockOutPhotoData) {
+      showStatus('กรุณาแนบรูปถ่ายก่อนบันทึกออกงาน', true);
+      return;
+    }
+
     var dailyNames = tasks.filter(function (t) { return t.recurring === 'Daily'; })
       .map(function (t) { return t.name; });
     saveDailyTasks(employeeId, dailyNames);
@@ -641,11 +831,12 @@
 
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกออกงาน...', false);
-      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks, locationNote: locationNote }).then(function (res) {
+      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks, locationNote: locationNote, photo: clockOutPhotoData }).then(function (res) {
         if (!res.success) { confirmClockOutBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         setClockStatus(employeeId, 'out');
         applyClockButtonState(employeeId);
         loadTodayStatus(employeeId);
+        resetClockOutPhoto();
         var msg = 'บันทึกออกงานสำเร็จ';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
         showStatus(msg, false);
@@ -666,9 +857,10 @@
     }
 
     showStatus('กำลังบันทึกใบลา...', false);
-    apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate }).then(function (res) {
+    apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate, photo: leavePhotoData }).then(function (res) {
       if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
       loadLeaveSummary(employeeId);
+      resetLeavePhoto();
       showStatus('ยื่นใบลาสำเร็จ (สถานะ: ' + res.data.status + ')', false);
     }).catch(function (err) { showStatus('เกิดข้อผิดพลาด: ' + err.message, true); });
   });
