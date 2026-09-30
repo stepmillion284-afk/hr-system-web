@@ -348,6 +348,13 @@
   <label>วันที่สิ้นสุดลา:</label>
   <input type="date" id="leaveEndDate">
 
+  <label>ช่วงเวลาลา:</label>
+  <select id="leavePart">
+    <option value="เต็มวัน">เต็มวัน</option>
+    <option value="ครึ่งเช้า">ครึ่งเช้า</option>
+    <option value="ครึ่งบ่าย">ครึ่งบ่าย</option>
+  </select>
+
   <label for="leavePhotoInput">แนบรูปหลักฐาน (ไม่บังคับ เช่น ใบรับรองแพทย์)</label>
   <div class="photo-input-row">
     <input type="file" accept="image/*" id="leavePhotoInput">
@@ -919,14 +926,20 @@
     var leaveType = document.getElementById('leaveType').value;
     var startDate = document.getElementById('leaveStartDate').value;
     var endDate = document.getElementById('leaveEndDate').value;
+    var leavePart = document.getElementById('leavePart').value;
 
     if (!startDate || !endDate) {
       showStatus('กรุณาเลือกวันที่ลาให้ครบ', true);
       return;
     }
 
+    if (leavePart !== 'เต็มวัน' && startDate !== endDate) {
+      showStatus('ลาครึ่งวันต้องเลือกวันที่เริ่มลาและวันที่สิ้นสุดลาเป็นวันเดียวกัน', true);
+      return;
+    }
+
     showStatus('กำลังบันทึกใบลา...', false);
-    apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate, photo: leavePhotoData }).then(function (res) {
+    apiCall('submitLeaveRequest', { employeeId: employeeId, leaveType: leaveType, startDate: startDate, endDate: endDate, leavePart: leavePart, photo: leavePhotoData }).then(function (res) {
       if (!res.success) { showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
       loadLeaveSummary(employeeId);
       resetLeavePhoto();
