@@ -880,18 +880,27 @@
 
     var locationNote = document.getElementById('locationNote').value.trim();
 
-    var estimatedLength = estimateApiCallLength('clockOut', { employeeId: employeeId, lat: 0, lng: 0, tasks: tasks, locationNote: locationNote, photo: clockOutPhotoData });
+    var estimatedLength = estimateApiCallLength('submitDailyTasks', { employeeId: employeeId, tasks: tasks });
     if (estimatedLength > MAX_API_URL_LENGTH) {
-      showStatus('รายการงานหรือหมายเหตุยาวเกินไป กรุณาย่อข้อความในช่อง "หมายเหตุ"/"ลิงก์งาน" ของแต่ละรายการให้สั้นลง หรือลบรายการที่ไม่จำเป็นออก แล้วลองบันทึกออกงานใหม่', true);
+      showStatus('รายการงานยาวเกินไป กรุณาย่อข้อความในช่อง "หมายเหตุ"/"ลิงก์งาน" ของแต่ละรายการให้สั้นลง หรือลบรายการที่ไม่จำเป็นออก แล้วลองบันทึกออกงานใหม่', true);
       return;
     }
 
     var confirmClockOutBtn = document.getElementById('confirmClockOutBtn');
     confirmClockOutBtn.disabled = true;
 
+    function submitTasksAfterClockOut(baseMsg) {
+      apiCall('submitDailyTasks', { employeeId: employeeId, tasks: tasks }).then(function (taskRes) {
+        if (!taskRes.success) { showStatus(baseMsg + ' แต่บันทึกรายการงานไม่สำเร็จ: ' + taskRes.error, true); return; }
+        showStatus(baseMsg, false);
+      }).catch(function () {
+        showStatus(baseMsg + ' แต่บันทึกรายการงานไม่สำเร็จ (การเชื่อมต่อขัดข้อง) กรุณาลองใหม่', true);
+      });
+    }
+
     withLocation(function (lat, lng) {
       showStatus('กำลังบันทึกออกงาน...', false);
-      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, tasks: tasks, locationNote: locationNote, photo: clockOutPhotoData }).then(function (res) {
+      apiCall('clockOut', { employeeId: employeeId, lat: lat, lng: lng, locationNote: locationNote, photo: clockOutPhotoData }).then(function (res) {
         if (!res.success) { confirmClockOutBtn.disabled = false; showStatus('เกิดข้อผิดพลาด: ' + res.error, true); return; }
         setClockStatus(employeeId, 'out');
         applyClockButtonState(employeeId);
@@ -899,7 +908,7 @@
         resetClockOutPhoto();
         var msg = 'บันทึกออกงานสำเร็จ';
         if (res.data.anomaly) msg += ' — ' + res.data.anomaly;
-        showStatus(msg, false);
+        submitTasksAfterClockOut(msg);
       }).catch(function (err) {
         apiCall('getTodayStatus', { employeeId: employeeId }).then(function (statusRes) {
           if (statusRes.success && statusRes.data.status === 'done') {
@@ -907,7 +916,7 @@
             applyClockButtonState(employeeId);
             loadTodayStatus(employeeId);
             resetClockOutPhoto();
-            showStatus('บันทึกออกงานสำเร็จ (การเชื่อมต่อช้า แต่บันทึกได้แล้ว)', false);
+            submitTasksAfterClockOut('บันทึกออกงานสำเร็จ (การเชื่อมต่อช้า แต่บันทึกได้แล้ว)');
           } else {
             confirmClockOutBtn.disabled = false;
             showStatus('เกิดข้อผิดพลาด: ' + err.message, true);
