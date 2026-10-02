@@ -313,6 +313,7 @@
     <h2>รายการงานที่ทำวันนี้</h2>
     <div id="taskList"></div>
     <button id="addTaskBtn" class="btn-secondary btn-block" type="button">+ เพิ่มรายการงาน</button>
+    <div id="taskBudget" style="font-size:13px;margin:8px 2px 0;color:var(--ink-soft);"></div>
 
     <label for="clockOutPhotoInput">ถ่ายรูปตอนออกงาน (บังคับ)</label>
     <div class="photo-input-row">
@@ -810,6 +811,7 @@
         addTaskRow();
       }
     }
+    updateTaskBudget();
   });
 
   function getDailyTasks(employeeId) {
@@ -848,10 +850,7 @@
 
   document.getElementById('addTaskBtn').addEventListener('click', function () { addTaskRow(); });
 
-  document.getElementById('confirmClockOutBtn').addEventListener('click', function () {
-    var employeeId = getSelectedEmployeeId();
-    if (!employeeId) return;
-
+  function collectTasks() {
     var tasks = [];
     document.querySelectorAll('.task-row').forEach(function (row) {
       var name = row.querySelector('.taskName').value.trim();
@@ -863,6 +862,33 @@
         tasks.push({ name: name, status: status, recurring: recurring, link: link, note: note });
       }
     });
+    return tasks;
+  }
+
+  // ตัวอักษรไทย 1 ตัวกลายเป็น ~9 ตัวอักษรใน URL จึงประมาณจำนวนตัวอักษรที่เหลือด้วยอัตราส่วนนี้
+  function updateTaskBudget() {
+    var el = document.getElementById('taskBudget');
+    var employeeId = document.getElementById('employeeSelect').value || '';
+    var used = estimateApiCallLength('submitDailyTasks', { employeeId: employeeId, tasks: collectTasks() });
+    var percent = Math.round(used / MAX_API_URL_LENGTH * 100);
+    var remainingChars = Math.max(0, Math.floor((MAX_API_URL_LENGTH - used) / 9));
+    if (used > MAX_API_URL_LENGTH) {
+      el.style.color = 'var(--danger)';
+      el.textContent = 'รายการงานยาวเกินกำหนด (' + percent + '%) กรุณาย่อข้อความหรือลบรายการ';
+    } else {
+      el.style.color = percent >= 80 ? 'var(--warn)' : 'var(--ink-soft)';
+      el.textContent = 'ความยาวรายการงานที่ใช้ไป ' + percent + '% (พิมพ์ภาษาไทยได้อีกประมาณ ' + remainingChars + ' ตัวอักษร รวมทุกช่อง)';
+    }
+  }
+  document.getElementById('taskList').addEventListener('input', updateTaskBudget);
+  document.getElementById('taskList').addEventListener('click', function () { setTimeout(updateTaskBudget, 0); });
+  document.getElementById('addTaskBtn').addEventListener('click', updateTaskBudget);
+
+  document.getElementById('confirmClockOutBtn').addEventListener('click', function () {
+    var employeeId = getSelectedEmployeeId();
+    if (!employeeId) return;
+
+    var tasks = collectTasks();
 
     if (tasks.length === 0) {
       showStatus('กรุณากรอกรายการงานอย่างน้อย 1 รายการ', true);
@@ -882,7 +908,7 @@
 
     var estimatedLength = estimateApiCallLength('submitDailyTasks', { employeeId: employeeId, tasks: tasks });
     if (estimatedLength > MAX_API_URL_LENGTH) {
-      showStatus('รายการงานยาวเกินไป กรุณาย่อข้อความในช่อง "หมายเหตุ"/"ลิงก์งาน" ของแต่ละรายการให้สั้นลง หรือลบรายการที่ไม่จำเป็นออก แล้วลองบันทึกออกงานใหม่', true);
+      showStatus('รายการงานยาวเกินไป (ใช้ไป ' + Math.round(estimatedLength / MAX_API_URL_LENGTH * 100) + '% ของที่รับได้ ดูตัวนับใต้ปุ่ม "เพิ่มรายการงาน") กรุณาย่อข้อความในช่อง "ชื่องาน"/"หมายเหตุ"/"ลิงก์งาน" ให้สั้นลง หรือลบรายการที่ไม่จำเป็นออก แล้วลองบันทึกออกงานใหม่', true);
       return;
     }
 
